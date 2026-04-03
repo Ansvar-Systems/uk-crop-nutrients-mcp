@@ -1,25 +1,15 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.ansvar-systems/uk-crop-nutrients",
-  "description": "UK crop nutrient recommendations via MCP. AHDB RB209 NPK planning, soil classification, 61 crops, 2097 recommendations, commodity prices. Open data under OGL.",
+  "name": "io.github.Ansvar-Systems/uk-crop-nutrients",
+  "description": "UK crop nutrient recommendations \u2014 RB209 NPK planning, soil types, commodity prices",
   "repository": {
-    "url": "https://github.com/ansvar-systems/uk-crop-nutrients-mcp",
+    "url": "https://github.com/Ansvar-Systems/uk-crop-nutrients-mcp",
     "source": "github"
   },
   "version": "0.1.0",
-  "packages": [
-    {
-      "registryType": "npm",
-      "identifier": "@ansvar/uk-crop-nutrients-mcp",
-      "version": "0.1.0",
-      "transport": {
-        "type": "stdio"
-      }
-    }
-  ],
   "remotes": [
     {
-      "transportType": "streamable-http",
+      "type": "streamable-http",
       "url": "https://mcp.ansvar.eu/uk-crop-nutrients/mcp"
     }
   ]
