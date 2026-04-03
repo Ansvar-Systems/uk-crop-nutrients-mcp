@@ -1,0 +1,61 @@
+schema_version: "1.0"
+mcp_name: "Crop Nutrients MCP"
+category: "domain_intelligence"
+
+sources:
+  - name: "AHDB RB209 Nutrient Management Guide"
+    authority: "Agriculture and Horticulture Development Board"
+    official_url: "https://ahdb.org.uk/nutrient-management-guide"
+    api_url: null
+    retrieval_method: "HTML_SCRAPE"
+    format: "HTML"
+    authentication: "none"
+    update_frequency: "annual"
+    license:
+      type: "Open Government Licence"
+      url: "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+      summary: "Free to copy, publish, distribute, and adapt with attribution"
+    coverage:
+      scope: "NPK recommendations for all major UK crops by soil type and SNS index"
+      version: "RB209 10th Edition"
+      item_count: "~2000 recommendation entries"
+    languages:
+      - "en"
+
+  - name: "DEFRA Agricultural Price Indices"
+    authority: "Department for Environment, Food and Rural Affairs"
+    official_url: "https://www.gov.uk/government/statistics/agricultural-price-indices"
+    api_url: null
+    retrieval_method: "BULK_DOWNLOAD"
+    format: "CSV"
+    authentication: "none"
+    update_frequency: "monthly"
+    license:
+      type: "Open Government Licence"
+      url: "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+      summary: "Free to copy, publish, distribute, and adapt with attribution"
+    coverage:
+      scope: "UK agricultural commodity prices"
+      version: "current"
+      item_count: "~50 price series"
+    languages:
+      - "en"
+
+  - name: "AHDB Market Data"
+    authority: "Agriculture and Horticulture Development Board"
+    official_url: "https://ahdb.org.uk/cereals-oilseeds/cereal-and-oilseed-markets"
+    api_url: null
+    retrieval_method: "HTML_SCRAPE"
+    format: "HTML"
+    authentication: "none"
+    update_frequency: "weekly"
+    license:
+      type: "Open Government Licence"
+      url: "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+      summary: "Free to copy, publish, distribute, and adapt with attribution"
+    coverage:
+      scope: "UK delivered and ex-farm cereal and oilseed prices"
+      version: "current"
+      item_count: "~30 price points"
+    languages:
+      - "en"
