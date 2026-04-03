@@ -1,0 +1,11 @@
+{
+  "mcp_name": "Crop Nutrients MCP",
+  "jurisdiction": "GB",
+  "build_date": "2026-04-03",
+  "crops": 18,
+  "soil_types": 8,
+  "nutrient_recommendations": 40,
+  "commodity_prices": 17,
+  "fts_entries": 66,
+  "source_hash": "1c3ef1aeacbaf577"
+}
