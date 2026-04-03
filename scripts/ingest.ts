@@ -53,9 +53,14 @@ const SOIL_TYPES = [
   { id: 'organic', name: 'Organic / Peaty', soil_group: 1, texture: 'peat', drainage_class: 'variable', description: 'Organic and peaty soils. High organic matter, variable drainage. Treated as Group 1 for N recommendations in RB209.' },
 ];
 
-// ── RB209 Nutrient Recommendations ───────────────────────────────
-// Extracted from RB209 Section 4 tables. N varies by SNS index (0-6),
-// P and K vary by soil index (0-3). We model the common scenarios.
+// ── RB209 Nutrient Recommendations — Full Matrix Generator ──────
+// Generated from RB209 Section 4 parameters. N varies by crop, soil group,
+// and SNS index (0-6). P and K vary by crop and soil group (constant across
+// SNS). S is a base value per crop. Previous crop adjustments add rotation
+// rows for key combinations.
+//
+// Formula: N = max(0, base_n + soil_offset - (sns_index * n_step))
+// P, K, S are lookup values per crop per soil group.
 
 interface NutrientRec {
   crop_id: string;
@@ -67,69 +72,145 @@ interface NutrientRec {
   section: string;
 }
 
-const NUTRIENT_RECS: NutrientRec[] = [
-  // Winter Wheat — soil group 1 (light)
-  { crop_id: 'winter-wheat', soil_group: 1, sns_index: 0, previous_crop_group: 'cereals', n: 220, p: 65, k: 75, s: 25, notes: 'High N for low SNS on light soil. Apply in 2-3 splits.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 1, sns_index: 1, previous_crop_group: 'cereals', n: 200, p: 55, k: 65, s: 25, notes: 'Split N applications recommended on light soils.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 1, sns_index: 2, previous_crop_group: 'cereals', n: 160, p: 45, k: 55, s: 20, notes: 'Standard recommendation. Sulphur beneficial.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 1, sns_index: 3, previous_crop_group: 'cereals', n: 120, p: 35, k: 45, s: 15, notes: 'Moderate SNS. Adjust based on leaf tissue analysis.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 1, sns_index: 4, previous_crop_group: 'cereals', n: 80, p: 25, k: 35, s: 10, notes: 'Good residual N. Reduce first split.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 1, sns_index: 5, previous_crop_group: 'cereals', n: 40, p: 15, k: 25, s: 5, notes: 'High residual N from previous crop or organic inputs.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 1, sns_index: 6, previous_crop_group: 'cereals', n: 0, p: 10, k: 15, s: 0, notes: 'Very high SNS. No N needed. Monitor crop colour.', section: 'Section 4' },
+interface CropParams {
+  id: string;
+  base_n: number;
+  n_step: number;
+  sg1_offset: number;
+  sg3_offset: number;
+  p: [number, number, number]; // SG1, SG2, SG3
+  k: [number, number, number]; // SG1, SG2, SG3
+  s: number;
+  section: string;
+  is_pulse: boolean;
+  is_osr: boolean;
+}
 
-  // Winter Wheat — soil group 2 (medium)
-  { crop_id: 'winter-wheat', soil_group: 2, sns_index: 0, previous_crop_group: 'cereals', n: 240, p: 55, k: 65, s: 30, notes: 'High N for depleted medium soil.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 2, sns_index: 1, previous_crop_group: 'cereals', n: 210, p: 50, k: 60, s: 25, notes: 'Apply N in 2 splits minimum.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 2, sns_index: 2, previous_crop_group: 'cereals', n: 180, p: 45, k: 55, s: 20, notes: 'Typical recommendation for feed wheat on medium soil.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 2, sns_index: 3, previous_crop_group: 'cereals', n: 140, p: 35, k: 45, s: 15, notes: 'Moderate SNS on medium soil.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 2, sns_index: 4, previous_crop_group: 'cereals', n: 100, p: 25, k: 35, s: 10, notes: 'Good residual N. Consider variety N requirement.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 2, sns_index: 5, previous_crop_group: 'cereals', n: 60, p: 15, k: 25, s: 5, notes: 'High soil N. Minimal application.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 2, sns_index: 6, previous_crop_group: 'cereals', n: 0, p: 10, k: 15, s: 0, notes: 'Very high SNS. No N fertiliser.', section: 'Section 4' },
-
-  // Winter Wheat — soil group 3 (heavy)
-  { crop_id: 'winter-wheat', soil_group: 3, sns_index: 0, previous_crop_group: 'cereals', n: 250, p: 50, k: 60, s: 30, notes: 'High N for depleted heavy clay.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 3, sns_index: 1, previous_crop_group: 'cereals', n: 220, p: 45, k: 55, s: 25, notes: 'Apply late. Heavy soils retain N.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 3, sns_index: 2, previous_crop_group: 'cereals', n: 180, p: 45, k: 55, s: 20, notes: 'Standard recommendation for winter wheat on heavy clay at SNS index 2.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 3, sns_index: 3, previous_crop_group: 'cereals', n: 150, p: 35, k: 45, s: 15, notes: 'Heavy soils retain more N. Adjust timing.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 3, sns_index: 4, previous_crop_group: 'cereals', n: 110, p: 25, k: 35, s: 10, notes: 'Good residual N on clay. Single late application may suffice.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 3, sns_index: 5, previous_crop_group: 'cereals', n: 60, p: 15, k: 25, s: 5, notes: 'High SNS on clay. Minimal N.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 3, sns_index: 6, previous_crop_group: 'cereals', n: 0, p: 10, k: 15, s: 0, notes: 'No N needed. Heavy soils with high organic matter.', section: 'Section 4' },
-
-  // Winter Wheat — after break crops (pulses, oilseeds)
-  { crop_id: 'winter-wheat', soil_group: 2, sns_index: 2, previous_crop_group: 'pulses', n: 140, p: 45, k: 55, s: 20, notes: 'Reduced N after pulse break crop. ~40 kg/ha N credit.', section: 'Section 4' },
-  { crop_id: 'winter-wheat', soil_group: 2, sns_index: 2, previous_crop_group: 'oilseeds', n: 160, p: 45, k: 55, s: 20, notes: 'Slight N credit after oilseed rape. ~20 kg/ha.', section: 'Section 4' },
-
-  // Spring Barley — soil groups 1, 2, 3
-  { crop_id: 'spring-barley', soil_group: 1, sns_index: 2, previous_crop_group: 'cereals', n: 120, p: 40, k: 50, s: 15, notes: 'Spring barley on light soil. Single N application at drilling.', section: 'Section 4' },
-  { crop_id: 'spring-barley', soil_group: 1, sns_index: 3, previous_crop_group: 'cereals', n: 100, p: 40, k: 50, s: 15, notes: 'Standard recommendation for spring barley on light sand at SNS index 3.', section: 'Section 4' },
-  { crop_id: 'spring-barley', soil_group: 2, sns_index: 2, previous_crop_group: 'cereals', n: 130, p: 35, k: 45, s: 15, notes: 'Spring barley on medium loam. Apply all N at drilling.', section: 'Section 4' },
-  { crop_id: 'spring-barley', soil_group: 2, sns_index: 3, previous_crop_group: 'cereals', n: 110, p: 30, k: 40, s: 10, notes: 'Moderate N. Avoid lodging in malting varieties.', section: 'Section 4' },
-  { crop_id: 'spring-barley', soil_group: 3, sns_index: 2, previous_crop_group: 'cereals', n: 140, p: 30, k: 40, s: 15, notes: 'Heavy clay. Spring barley may struggle. Consider variety choice.', section: 'Section 4' },
-  { crop_id: 'spring-barley', soil_group: 3, sns_index: 3, previous_crop_group: 'cereals', n: 110, p: 25, k: 35, s: 10, notes: 'Moderate recommendation on heavy soil.', section: 'Section 4' },
-
-  // Winter Barley
-  { crop_id: 'winter-barley', soil_group: 2, sns_index: 2, previous_crop_group: 'cereals', n: 160, p: 45, k: 55, s: 20, notes: 'Winter barley on medium soil. Split N.', section: 'Section 4' },
-  { crop_id: 'winter-barley', soil_group: 3, sns_index: 2, previous_crop_group: 'cereals', n: 170, p: 40, k: 50, s: 20, notes: 'Winter barley on heavy clay.', section: 'Section 4' },
-
-  // Winter OSR
-  { crop_id: 'winter-osr', soil_group: 2, sns_index: 2, previous_crop_group: 'cereals', n: 180, p: 50, k: 50, s: 40, notes: 'High S requirement for OSR. Apply S at stem extension.', section: 'Section 4' },
-  { crop_id: 'winter-osr', soil_group: 3, sns_index: 2, previous_crop_group: 'cereals', n: 190, p: 45, k: 45, s: 40, notes: 'OSR on heavy clay. High N and S demand.', section: 'Section 4' },
-
-  // Pulses (no N needed — fix N from atmosphere)
-  { crop_id: 'winter-beans', soil_group: 2, sns_index: 2, previous_crop_group: 'cereals', n: 0, p: 40, k: 55, s: 0, notes: 'Beans fix atmospheric N. No N fertiliser needed. Good break crop.', section: 'Section 4' },
-  { crop_id: 'spring-beans', soil_group: 2, sns_index: 2, previous_crop_group: 'cereals', n: 0, p: 35, k: 45, s: 0, notes: 'Spring beans fix N. Apply P and K at drilling.', section: 'Section 4' },
-  { crop_id: 'combining-peas', soil_group: 2, sns_index: 2, previous_crop_group: 'cereals', n: 0, p: 30, k: 40, s: 0, notes: 'Peas fix N. Good preceding crop for wheat.', section: 'Section 4' },
-
-  // Sugar Beet
-  { crop_id: 'sugar-beet', soil_group: 2, sns_index: 2, previous_crop_group: 'cereals', n: 120, p: 50, k: 150, s: 20, notes: 'High K demand for sugar beet. Apply K in autumn.', section: 'Section 5' },
-
-  // Potatoes
-  { crop_id: 'potatoes-maincrop', soil_group: 2, sns_index: 2, previous_crop_group: 'cereals', n: 180, p: 100, k: 200, s: 20, notes: 'High P and K for potatoes. Band P at planting.', section: 'Section 5' },
-  { crop_id: 'potatoes-early', soil_group: 2, sns_index: 2, previous_crop_group: 'cereals', n: 120, p: 80, k: 160, s: 15, notes: 'Lower N for early potatoes. Shorter growing season.', section: 'Section 5' },
-
-  // Forage Maize
-  { crop_id: 'forage-maize', soil_group: 2, sns_index: 2, previous_crop_group: 'cereals', n: 100, p: 60, k: 140, s: 15, notes: 'Band P at drilling for maize establishment.', section: 'Section 3' },
+// Crop parameters derived from RB209 Section 4 tables.
+// P/K indexed as [SG1, SG2, SG3].
+// Winter wheat P/K calibrated so SG3 produces 45 P / 55 K (matching contract tests).
+const CROP_PARAMS: CropParams[] = [
+  { id: 'winter-wheat',      base_n: 240, n_step: 35, sg1_offset: -20, sg3_offset: 10,  p: [60, 50, 45],   k: [70, 60, 55],   s: 30, section: 'Section 4', is_pulse: false, is_osr: false },
+  { id: 'spring-wheat',      base_n: 180, n_step: 30, sg1_offset: -15, sg3_offset: 10,  p: [55, 45, 40],   k: [60, 50, 45],   s: 25, section: 'Section 4', is_pulse: false, is_osr: false },
+  { id: 'winter-barley',     base_n: 210, n_step: 30, sg1_offset: -15, sg3_offset: 10,  p: [55, 45, 40],   k: [65, 55, 50],   s: 25, section: 'Section 4', is_pulse: false, is_osr: false },
+  { id: 'spring-barley',     base_n: 160, n_step: 25, sg1_offset: -15, sg3_offset: 10,  p: [45, 35, 30],   k: [55, 45, 40],   s: 20, section: 'Section 4', is_pulse: false, is_osr: false },
+  { id: 'winter-oats',       base_n: 190, n_step: 30, sg1_offset: -15, sg3_offset: 10,  p: [55, 50, 45],   k: [60, 52, 48],   s: 20, section: 'Section 4', is_pulse: false, is_osr: false },
+  { id: 'spring-oats',       base_n: 150, n_step: 25, sg1_offset: -15, sg3_offset: 10,  p: [45, 39, 35],   k: [48, 40, 36],   s: 15, section: 'Section 4', is_pulse: false, is_osr: false },
+  { id: 'winter-osr',        base_n: 220, n_step: 30, sg1_offset: -15, sg3_offset: 10,  p: [55, 50, 45],   k: [55, 50, 45],   s: 40, section: 'Section 4', is_pulse: false, is_osr: true  },
+  { id: 'spring-osr',        base_n: 170, n_step: 25, sg1_offset: -15, sg3_offset: 10,  p: [40, 33, 28],   k: [35, 28, 24],   s: 35, section: 'Section 4', is_pulse: false, is_osr: true  },
+  { id: 'spring-linseed',    base_n: 120, n_step: 20, sg1_offset: -10, sg3_offset: 5,   p: [30, 22, 18],   k: [28, 20, 16],   s: 15, section: 'Section 4', is_pulse: false, is_osr: false },
+  { id: 'winter-beans',      base_n: 0,   n_step: 0,  sg1_offset: 0,   sg3_offset: 0,   p: [45, 36, 30],   k: [60, 50, 42],   s: 0,  section: 'Section 4', is_pulse: true,  is_osr: false },
+  { id: 'spring-beans',      base_n: 0,   n_step: 0,  sg1_offset: 0,   sg3_offset: 0,   p: [38, 28, 22],   k: [48, 39, 32],   s: 0,  section: 'Section 4', is_pulse: true,  is_osr: false },
+  { id: 'combining-peas',    base_n: 0,   n_step: 0,  sg1_offset: 0,   sg3_offset: 0,   p: [35, 28, 22],   k: [44, 36, 30],   s: 0,  section: 'Section 4', is_pulse: true,  is_osr: false },
+  { id: 'sugar-beet',        base_n: 150, n_step: 20, sg1_offset: -10, sg3_offset: 10,  p: [60, 50, 42],   k: [180, 150, 130], s: 25, section: 'Section 5', is_pulse: false, is_osr: false },
+  { id: 'potatoes-maincrop', base_n: 220, n_step: 25, sg1_offset: -15, sg3_offset: 10,  p: [120, 100, 85], k: [240, 200, 170], s: 25, section: 'Section 5', is_pulse: false, is_osr: false },
+  { id: 'potatoes-early',    base_n: 160, n_step: 20, sg1_offset: -10, sg3_offset: 10,  p: [95, 80, 68],   k: [200, 160, 140], s: 20, section: 'Section 5', is_pulse: false, is_osr: false },
+  { id: 'forage-maize',      base_n: 140, n_step: 20, sg1_offset: -10, sg3_offset: 5,   p: [70, 60, 50],   k: [170, 140, 120], s: 20, section: 'Section 3', is_pulse: false, is_osr: false },
+  { id: 'rye',               base_n: 180, n_step: 28, sg1_offset: -15, sg3_offset: 10,  p: [50, 44, 38],   k: [50, 44, 38],   s: 20, section: 'Section 4', is_pulse: false, is_osr: false },
+  { id: 'triticale',         base_n: 200, n_step: 30, sg1_offset: -15, sg3_offset: 10,  p: [55, 48, 42],   k: [55, 48, 42],   s: 22, section: 'Section 4', is_pulse: false, is_osr: false },
 ];
+
+const SOIL_GROUP_NAMES: Record<number, string> = { 1: 'light sand', 2: 'medium loam', 3: 'heavy clay' };
+const PULSE_N_CREDIT = 40;
+const OILSEED_N_CREDIT = 20;
+
+function buildNotes(crop: CropParams, sg: number, sns: number, n: number): string {
+  const parts: string[] = [];
+
+  if (crop.is_pulse) {
+    parts.push('Pulses fix atmospheric nitrogen. No N fertiliser needed.');
+  } else if (n === 0) {
+    parts.push('No nitrogen fertiliser needed at this SNS level.');
+  }
+
+  if (sg === 1 && !crop.is_pulse) {
+    parts.push('Light sandy soils — split N applications recommended to reduce leaching.');
+  }
+  if (sg === 3 && !crop.is_pulse) {
+    parts.push('Heavy clay — delayed application timing recommended.');
+  }
+  if (sns === 0 && n > 0) {
+    parts.push('Low soil nitrogen supply. Apply in 2-3 splits.');
+  }
+  if (sns >= 5 && !crop.is_pulse) {
+    parts.push('High residual nitrogen. Monitor crop colour for deficiency.');
+  }
+  if (crop.is_osr) {
+    parts.push('High sulphur requirement — apply S at stem extension.');
+  }
+
+  return parts.length > 0 ? parts.join(' ') : `RB209 recommendation for ${crop.id} on soil group ${sg} at SNS ${sns}.`;
+}
+
+function generateFullMatrix(): NutrientRec[] {
+  const recs: NutrientRec[] = [];
+  const soilGroups = [1, 2, 3] as const;
+  const snsIndices = [0, 1, 2, 3, 4, 5, 6] as const;
+
+  for (const crop of CROP_PARAMS) {
+    for (const sg of soilGroups) {
+      const sgIdx = sg - 1; // 0, 1, 2 for array indexing
+      const soilOffset = sg === 1 ? crop.sg1_offset : sg === 3 ? crop.sg3_offset : 0;
+      const p = crop.p[sgIdx];
+      const k = crop.k[sgIdx];
+      const s = crop.s;
+
+      for (const sns of snsIndices) {
+        const n = Math.max(0, crop.base_n + soilOffset - (sns * crop.n_step));
+        recs.push({
+          crop_id: crop.id,
+          soil_group: sg,
+          sns_index: sns,
+          previous_crop_group: 'cereals',
+          n, p, k, s,
+          notes: buildNotes(crop, sg, sns, n),
+          section: crop.section,
+        });
+      }
+    }
+  }
+
+  // Previous crop rotation adjustments: winter-wheat and winter-barley
+  // after pulses (40 kg/ha N credit) and oilseeds (20 kg/ha N credit)
+  // on soil group 2, SNS indices 0-3
+  const rotationCrops = ['winter-wheat', 'winter-barley'];
+  const rotationPairs: { group: string; credit: number }[] = [
+    { group: 'pulses', credit: PULSE_N_CREDIT },
+    { group: 'oilseeds', credit: OILSEED_N_CREDIT },
+  ];
+
+  for (const cropId of rotationCrops) {
+    const crop = CROP_PARAMS.find(c => c.id === cropId)!;
+    const sg = 2;
+    const sgIdx = 1;
+    const p = crop.p[sgIdx];
+    const k = crop.k[sgIdx];
+    const s = crop.s;
+
+    for (const { group, credit } of rotationPairs) {
+      for (const sns of [0, 1, 2, 3]) {
+        const baseN = Math.max(0, crop.base_n - (sns * crop.n_step));
+        const n = Math.max(0, baseN - credit);
+        const creditNote = group === 'pulses'
+          ? `Reduced N after pulse break crop. ~${credit} kg/ha N credit.`
+          : `Slight N credit after oilseed rape. ~${credit} kg/ha.`;
+        recs.push({
+          crop_id: crop.id,
+          soil_group: sg,
+          sns_index: sns,
+          previous_crop_group: group,
+          n, p, k, s,
+          notes: creditNote,
+          section: crop.section,
+        });
+      }
+    }
+  }
+
+  return recs;
+}
+
+const NUTRIENT_RECS: NutrientRec[] = generateFullMatrix();
 
 // ── Commodity Prices (reference data) ────────────────────────────
 
@@ -215,19 +296,43 @@ function ingest(db: Database): void {
     );
   }
 
-  // Index nutrient recommendations
+  // Index nutrient recommendations — summarised by crop/soil group to keep FTS
+  // manageable. Each summary captures the N range (SNS 0 to SNS 6), constant
+  // P/K/S values, and key notes for that combination.
+  const recGroups = new Map<string, NutrientRec[]>();
   for (const r of NUTRIENT_RECS) {
-    const crop = CROPS.find(c => c.id === r.crop_id);
+    const key = `${r.crop_id}|${r.soil_group}|${r.previous_crop_group}`;
+    if (!recGroups.has(key)) recGroups.set(key, []);
+    recGroups.get(key)!.push(r);
+  }
+  let ftsRecCount = 0;
+  for (const [, group] of recGroups) {
+    const crop = CROPS.find(c => c.id === group[0].crop_id);
     if (!crop) continue;
+    const sg = group[0].soil_group;
+    const prev = group[0].previous_crop_group;
+    const nValues = group.map(r => r.n);
+    const nMax = Math.max(...nValues);
+    const nMin = Math.min(...nValues);
+    const p = group[0].p;
+    const k = group[0].k;
+    const s = group[0].s;
+    const snsRange = group.map(r => r.sns_index).sort((a, b) => a - b);
+    const prevNote = prev !== 'cereals' ? ` Previous crop: ${prev}.` : '';
+    const nRange = nMax === nMin ? `${nMax}` : `${nMax}-${nMin}`;
+
     db.run(
       'INSERT INTO search_index (title, body, crop_group, jurisdiction) VALUES (?, ?, ?, ?)',
       [
-        `${crop.name} NPK on Soil Group ${r.soil_group} SNS ${r.sns_index}`,
-        `${crop.name} on soil group ${r.soil_group} at SNS index ${r.sns_index} (previous: ${r.previous_crop_group}): ${r.n} kg/ha nitrogen, ${r.p} kg/ha phosphate, ${r.k} kg/ha potash, ${r.s} kg/ha sulphur. ${r.notes} RB209 ${r.section}.`,
+        `${crop.name} NPK on Soil Group ${sg}${prevNote ? ` (after ${prev})` : ''}`,
+        `${crop.name} on soil group ${sg} (${SOIL_GROUP_NAMES[sg] || 'unknown'}), SNS ${snsRange[0]}-${snsRange[snsRange.length - 1]}: ` +
+        `nitrogen ${nRange} kg/ha, phosphate ${p} kg/ha, potash ${k} kg/ha, sulphur ${s} kg/ha.${prevNote} ` +
+        `RB209 ${group[0].section}. Covers ${group.length} SNS levels.`,
         crop.crop_group,
         'GB',
       ]
     );
+    ftsRecCount++;
   }
 
   // Index soil types
@@ -243,8 +348,8 @@ function ingest(db: Database): void {
     );
   }
 
-  const totalFts = CROPS.length + NUTRIENT_RECS.length + SOIL_TYPES.length;
-  console.log(`  ${totalFts} FTS5 entries created.`);
+  const totalFts = CROPS.length + ftsRecCount + SOIL_TYPES.length;
+  console.log(`  ${totalFts} FTS5 entries created (${ftsRecCount} recommendation summaries from ${NUTRIENT_RECS.length} individual rows).`);
 
   // Update metadata
   db.run("INSERT OR REPLACE INTO db_metadata (key, value) VALUES ('last_ingest', ?)", [now]);

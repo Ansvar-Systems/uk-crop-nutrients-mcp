@@ -4,8 +4,8 @@
   "build_date": "2026-04-03",
   "crops": 18,
   "soil_types": 8,
-  "nutrient_recommendations": 40,
+  "nutrient_recommendations": 394,
   "commodity_prices": 17,
-  "fts_entries": 66,
-  "source_hash": "1c3ef1aeacbaf577"
+  "fts_entries": 84,
+  "source_hash": "03220849d5d65d5e"
 }
