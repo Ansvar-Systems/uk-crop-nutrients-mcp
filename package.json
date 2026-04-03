@@ -1,5 +1,6 @@
 {
   "name": "@ansvar/uk-crop-nutrients-mcp",
+  "mcpName": "io.github.ansvar-systems/uk-crop-nutrients",
   "version": "0.1.0",
   "description": "UK crop nutrient recommendations via MCP -- RB209 data, soil types, NPK planning, commodity prices",
   "type": "module",
