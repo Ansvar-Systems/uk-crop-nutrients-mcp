@@ -538,6 +538,22 @@ function ingest(db: Database): void {
 
 // ── Main ─────────────────────────────────────────────────────────
 
+const args = process.argv.slice(2);
+const diffOnly = args.includes('--diff-only');
+const fetchOnly = args.includes('--fetch-only');
+const force = args.includes('--force');
+
+if (diffOnly) {
+  // For now, always report changes (curated data doesn't have upstream diff)
+  console.log('changes detected');
+  process.exit(0);
+}
+
+if (fetchOnly) {
+  console.log('Fetch-only mode: no upstream API to fetch for curated data.');
+  process.exit(0);
+}
+
 mkdirSync('data', { recursive: true });
 const db = createDatabase('data/database.db');
 ingest(db);
