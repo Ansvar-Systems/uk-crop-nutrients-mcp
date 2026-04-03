@@ -1,0 +1,51 @@
+{
+  "name": "@ansvar/crop-nutrients-mcp",
+  "version": "0.1.0",
+  "description": "UK crop nutrient recommendations via MCP -- RB209 data, soil types, NPK planning, commodity prices",
+  "type": "module",
+  "main": "dist/server.js",
+  "bin": {
+    "crop-nutrients-mcp": "dist/server.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "start:http": "node dist/http-server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/ tests/",
+    "typecheck": "tsc --noEmit",
+    "ingest": "tsx scripts/ingest.ts",
+    "ingest:fetch": "tsx scripts/ingest.ts --fetch-only",
+    "build:db": "tsx scripts/build-db.ts",
+    "freshness:check": "tsx scripts/check-freshness.ts",
+    "coverage:update": "tsx scripts/update-coverage.ts"
+  },
+  "keywords": ["mcp", "agriculture", "nutrients", "rb209", "farming", "crop-science"],
+  "author": "Ansvar Systems <info@ansvar.eu>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ansvar-systems/crop-nutrients-mcp"
+  },
+  "homepage": "https://ansvar.eu/open-agriculture",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "better-sqlite3": "^11.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}
