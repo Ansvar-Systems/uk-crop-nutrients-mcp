@@ -38,6 +38,25 @@ const CROPS = [
   { id: 'forage-maize', name: 'Forage Maize', crop_group: 'forage', typical_yield_t_ha: 40.0, n: 100, p: 60, k: 200, stages: ['emergence', 'vegetative', 'tasseling', 'grain fill'] },
   { id: 'rye', name: 'Rye', crop_group: 'cereals', typical_yield_t_ha: 5.5, n: 121, p: 44, k: 44, stages: ['tillering', 'stem extension', 'ear emergence', 'grain fill'] },
   { id: 'triticale', name: 'Triticale', crop_group: 'cereals', typical_yield_t_ha: 6.0, n: 132, p: 48, k: 48, stages: ['tillering', 'stem extension', 'ear emergence', 'grain fill'] },
+  // Grassland / Forage — RB209 Section 3
+  { id: 'perennial-ryegrass', name: 'Perennial Ryegrass', crop_group: 'forage', typical_yield_t_ha: 10.0, n: 160, p: 50, k: 180, stages: ['spring growth', 'first cut', 'regrowth', 'second cut', 'autumn'] },
+  { id: 'italian-ryegrass-forage', name: 'Italian Ryegrass (forage)', crop_group: 'forage', typical_yield_t_ha: 12.0, n: 200, p: 55, k: 210, stages: ['spring growth', 'first cut', 'regrowth', 'second cut', 'third cut'] },
+  { id: 'timothy', name: 'Timothy', crop_group: 'forage', typical_yield_t_ha: 8.0, n: 130, p: 40, k: 150, stages: ['spring growth', 'first cut', 'regrowth', 'second cut'] },
+  { id: 'white-clover-mix', name: 'Grass/White Clover Mix', crop_group: 'forage', typical_yield_t_ha: 9.0, n: 0, p: 50, k: 170, stages: ['spring growth', 'first cut', 'regrowth', 'second cut', 'autumn'] },
+  { id: 'lucerne', name: 'Lucerne (Alfalfa)', crop_group: 'forage', typical_yield_t_ha: 10.0, n: 0, p: 55, k: 200, stages: ['spring growth', 'first cut', 'regrowth', 'second cut', 'third cut'] },
+  { id: 'whole-crop-wheat', name: 'Whole Crop Wheat', crop_group: 'forage', typical_yield_t_ha: 30.0, n: 130, p: 50, k: 100, stages: ['tillering', 'stem extension', 'ear emergence', 'harvest'] },
+  { id: 'fodder-beet', name: 'Fodder Beet', crop_group: 'root_crops', typical_yield_t_ha: 80.0, n: 120, p: 55, k: 260, stages: ['emergence', 'canopy closure', 'root bulking'] },
+  { id: 'swedes', name: 'Swedes', crop_group: 'root_crops', typical_yield_t_ha: 50.0, n: 80, p: 40, k: 150, stages: ['emergence', 'canopy closure', 'root bulking'] },
+  { id: 'turnips', name: 'Turnips', crop_group: 'root_crops', typical_yield_t_ha: 40.0, n: 60, p: 35, k: 120, stages: ['emergence', 'canopy closure', 'root bulking'] },
+  { id: 'kale', name: 'Kale', crop_group: 'forage', typical_yield_t_ha: 8.0, n: 150, p: 45, k: 160, stages: ['establishment', 'vegetative growth', 'grazing'] },
+  // Vegetables — RB209 Section 6
+  { id: 'vining-peas', name: 'Vining Peas', crop_group: 'vegetables', typical_yield_t_ha: 5.0, n: 0, p: 35, k: 50, stages: ['emergence', 'vegetative', 'flowering', 'pod fill'] },
+  { id: 'calabrese', name: 'Calabrese/Broccoli', crop_group: 'vegetables', typical_yield_t_ha: 12.0, n: 250, p: 80, k: 200, stages: ['transplant', 'vegetative', 'head formation', 'harvest'] },
+  { id: 'cauliflower', name: 'Cauliflower', crop_group: 'vegetables', typical_yield_t_ha: 20.0, n: 275, p: 85, k: 220, stages: ['transplant', 'vegetative', 'curd formation', 'harvest'] },
+  { id: 'cabbage', name: 'Cabbage', crop_group: 'vegetables', typical_yield_t_ha: 40.0, n: 260, p: 75, k: 230, stages: ['transplant', 'vegetative', 'head formation', 'harvest'] },
+  { id: 'carrots', name: 'Carrots', crop_group: 'vegetables', typical_yield_t_ha: 50.0, n: 80, p: 50, k: 200, stages: ['emergence', 'canopy', 'root bulking', 'harvest'] },
+  { id: 'onions', name: 'Onions', crop_group: 'vegetables', typical_yield_t_ha: 45.0, n: 120, p: 55, k: 180, stages: ['emergence', 'bulb initiation', 'bulb swelling', 'harvest'] },
+  { id: 'lettuce', name: 'Lettuce', crop_group: 'vegetables', typical_yield_t_ha: 30.0, n: 130, p: 45, k: 170, stages: ['transplant', 'vegetative', 'head formation', 'harvest'] },
 ];
 
 // ── RB209 Soil Types ─────────────────────────────────────────────
@@ -108,16 +127,39 @@ const CROP_PARAMS: CropParams[] = [
   { id: 'forage-maize',      base_n: 140, n_step: 20, sg1_offset: -10, sg3_offset: 5,   p: [70, 60, 50],   k: [170, 140, 120], s: 20, section: 'Section 3', is_pulse: false, is_osr: false },
   { id: 'rye',               base_n: 180, n_step: 28, sg1_offset: -15, sg3_offset: 10,  p: [50, 44, 38],   k: [50, 44, 38],   s: 20, section: 'Section 4', is_pulse: false, is_osr: false },
   { id: 'triticale',         base_n: 200, n_step: 30, sg1_offset: -15, sg3_offset: 10,  p: [55, 48, 42],   k: [55, 48, 42],   s: 22, section: 'Section 4', is_pulse: false, is_osr: false },
+  // Grassland / Forage — RB209 Section 3
+  { id: 'perennial-ryegrass',     base_n: 280, n_step: 35, sg1_offset: -20, sg3_offset: 10, p: [55, 50, 45], k: [200, 180, 160], s: 30, section: 'Section 3', is_pulse: false, is_osr: false },
+  { id: 'italian-ryegrass-forage', base_n: 320, n_step: 40, sg1_offset: -20, sg3_offset: 10, p: [60, 55, 48], k: [230, 210, 190], s: 35, section: 'Section 3', is_pulse: false, is_osr: false },
+  { id: 'timothy',                base_n: 220, n_step: 30, sg1_offset: -15, sg3_offset: 10, p: [45, 40, 35], k: [170, 150, 130], s: 25, section: 'Section 3', is_pulse: false, is_osr: false },
+  { id: 'white-clover-mix',       base_n: 0,   n_step: 0,  sg1_offset: 0,   sg3_offset: 0,  p: [55, 50, 45], k: [190, 170, 150], s: 20, section: 'Section 3', is_pulse: true,  is_osr: false },
+  { id: 'lucerne',                base_n: 0,   n_step: 0,  sg1_offset: 0,   sg3_offset: 0,  p: [60, 55, 48], k: [220, 200, 180], s: 25, section: 'Section 3', is_pulse: true,  is_osr: false },
+  { id: 'whole-crop-wheat',       base_n: 180, n_step: 25, sg1_offset: -15, sg3_offset: 10, p: [55, 50, 42], k: [120, 100, 85],  s: 25, section: 'Section 3', is_pulse: false, is_osr: false },
+  { id: 'fodder-beet',            base_n: 150, n_step: 20, sg1_offset: -10, sg3_offset: 10, p: [65, 55, 48], k: [280, 260, 230], s: 25, section: 'Section 3', is_pulse: false, is_osr: false },
+  { id: 'swedes',                 base_n: 120, n_step: 18, sg1_offset: -10, sg3_offset: 5,  p: [50, 40, 35], k: [170, 150, 130], s: 20, section: 'Section 3', is_pulse: false, is_osr: false },
+  { id: 'turnips',                base_n: 100, n_step: 15, sg1_offset: -10, sg3_offset: 5,  p: [42, 35, 30], k: [140, 120, 100], s: 15, section: 'Section 3', is_pulse: false, is_osr: false },
+  { id: 'kale',                   base_n: 200, n_step: 28, sg1_offset: -15, sg3_offset: 10, p: [50, 45, 38], k: [180, 160, 140], s: 30, section: 'Section 3', is_pulse: false, is_osr: false },
+  // Vegetables — RB209 Section 6
+  { id: 'vining-peas',            base_n: 0,   n_step: 0,  sg1_offset: 0,   sg3_offset: 0,  p: [42, 35, 28], k: [60, 50, 42],   s: 0,  section: 'Section 6', is_pulse: true,  is_osr: false },
+  { id: 'calabrese',              base_n: 300, n_step: 35, sg1_offset: -20, sg3_offset: 15, p: [90, 80, 68], k: [220, 200, 175], s: 40, section: 'Section 6', is_pulse: false, is_osr: false },
+  { id: 'cauliflower',            base_n: 320, n_step: 38, sg1_offset: -20, sg3_offset: 15, p: [95, 85, 72], k: [240, 220, 190], s: 45, section: 'Section 6', is_pulse: false, is_osr: false },
+  { id: 'cabbage',                base_n: 310, n_step: 36, sg1_offset: -20, sg3_offset: 15, p: [85, 75, 65], k: [250, 230, 200], s: 40, section: 'Section 6', is_pulse: false, is_osr: false },
+  { id: 'carrots',                base_n: 130, n_step: 18, sg1_offset: -10, sg3_offset: 5,  p: [60, 50, 42], k: [220, 200, 175], s: 15, section: 'Section 6', is_pulse: false, is_osr: false },
+  { id: 'onions',                 base_n: 160, n_step: 22, sg1_offset: -15, sg3_offset: 10, p: [65, 55, 45], k: [200, 180, 155], s: 20, section: 'Section 6', is_pulse: false, is_osr: false },
+  { id: 'lettuce',                base_n: 180, n_step: 25, sg1_offset: -15, sg3_offset: 10, p: [50, 45, 38], k: [190, 170, 150], s: 20, section: 'Section 6', is_pulse: false, is_osr: false },
 ];
 
 const SOIL_GROUP_NAMES: Record<number, string> = { 1: 'light sand', 2: 'medium loam', 3: 'heavy clay' };
 const PULSE_N_CREDIT = 40;
 const OILSEED_N_CREDIT = 20;
+const GRASS_N_CREDIT = 30;
+const POTATO_N_CREDIT = 10;
 
 function buildNotes(crop: CropParams, sg: number, sns: number, n: number): string {
   const parts: string[] = [];
 
-  if (crop.is_pulse) {
+  if (crop.is_pulse && (crop.id === 'lucerne' || crop.id === 'white-clover-mix')) {
+    parts.push('Legume crop fixes atmospheric nitrogen. No N fertiliser needed. Maintain P and K for sward persistence.');
+  } else if (crop.is_pulse) {
     parts.push('Pulses fix atmospheric nitrogen. No N fertiliser needed.');
   } else if (n === 0) {
     parts.push('No nitrogen fertiliser needed at this SNS level.');
@@ -170,37 +212,40 @@ function generateFullMatrix(): NutrientRec[] {
     }
   }
 
-  // Previous crop rotation adjustments: winter-wheat and winter-barley
-  // after pulses (40 kg/ha N credit) and oilseeds (20 kg/ha N credit)
-  // on soil group 2, SNS indices 0-3
-  const rotationCrops = ['winter-wheat', 'winter-barley'];
-  const rotationPairs: { group: string; credit: number }[] = [
-    { group: 'pulses', credit: PULSE_N_CREDIT },
-    { group: 'oilseeds', credit: OILSEED_N_CREDIT },
+  // Previous crop rotation adjustments for ALL non-pulse, non-zero-N crops
+  // on soil group 2, SNS indices 0-3:
+  // - After pulses: -40 kg N credit
+  // - After oilseeds: -20 kg N credit
+  // - After grass (2yr+): -30 kg N credit (mineralisation)
+  // - After potatoes: -10 kg N credit
+  const rotationPairs: { group: string; credit: number; note: string }[] = [
+    { group: 'pulses',   credit: PULSE_N_CREDIT,   note: 'Reduced N after pulse break crop.' },
+    { group: 'oilseeds', credit: OILSEED_N_CREDIT, note: 'N credit after oilseed rape.' },
+    { group: 'grass',    credit: GRASS_N_CREDIT,    note: 'N credit from grass ley mineralisation (2yr+).' },
+    { group: 'potatoes', credit: POTATO_N_CREDIT,   note: 'Slight N credit after potatoes.' },
   ];
 
-  for (const cropId of rotationCrops) {
-    const crop = CROP_PARAMS.find(c => c.id === cropId)!;
+  for (const crop of CROP_PARAMS) {
+    // Skip pulses and legumes (N=0) — no rotation N adjustment applies
+    if (crop.is_pulse || crop.base_n === 0) continue;
+
     const sg = 2;
     const sgIdx = 1;
     const p = crop.p[sgIdx];
     const k = crop.k[sgIdx];
     const s = crop.s;
 
-    for (const { group, credit } of rotationPairs) {
+    for (const { group, credit, note } of rotationPairs) {
       for (const sns of [0, 1, 2, 3]) {
         const baseN = Math.max(0, crop.base_n - (sns * crop.n_step));
         const n = Math.max(0, baseN - credit);
-        const creditNote = group === 'pulses'
-          ? `Reduced N after pulse break crop. ~${credit} kg/ha N credit.`
-          : `Slight N credit after oilseed rape. ~${credit} kg/ha.`;
         recs.push({
           crop_id: crop.id,
           soil_group: sg,
           sns_index: sns,
           previous_crop_group: group,
           n, p, k, s,
-          notes: creditNote,
+          notes: `${note} ~${credit} kg/ha N credit.`,
           section: crop.section,
         });
       }
@@ -232,6 +277,26 @@ const COMMODITY_PRICES = [
   { crop_id: 'potatoes-early', market: 'free-buy', price: 250.00, source: 'defra_api', published: '2026-03-01' },
   { crop_id: 'winter-oats', market: 'ex-farm', price: 160.00, source: 'ahdb_market', published: '2026-03-28' },
   { crop_id: 'spring-oats', market: 'ex-farm', price: 155.00, source: 'ahdb_market', published: '2026-03-28' },
+  // Forage / Grassland prices
+  { crop_id: 'perennial-ryegrass', market: 'silage', price: 35.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'italian-ryegrass-forage', market: 'silage', price: 38.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'timothy', market: 'hay', price: 120.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'white-clover-mix', market: 'silage', price: 36.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'lucerne', market: 'hay', price: 140.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'whole-crop-wheat', market: 'silage', price: 32.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'kale', market: 'standing', price: 500.00, source: 'defra_api', published: '2026-03-01' },
+  // Fodder root prices
+  { crop_id: 'fodder-beet', market: 'ex-farm', price: 22.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'swedes', market: 'ex-farm', price: 28.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'turnips', market: 'ex-farm', price: 25.00, source: 'defra_api', published: '2026-03-01' },
+  // Vegetable prices
+  { crop_id: 'vining-peas', market: 'contract', price: 280.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'calabrese', market: 'wholesale', price: 800.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'cauliflower', market: 'wholesale', price: 350.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'cabbage', market: 'wholesale', price: 120.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'carrots', market: 'wholesale', price: 180.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'onions', market: 'wholesale', price: 200.00, source: 'defra_api', published: '2026-03-01' },
+  { crop_id: 'lettuce', market: 'wholesale', price: 450.00, source: 'defra_api', published: '2026-03-01' },
 ];
 
 // ── Ingestion ────────────────────────────────────────────────────
