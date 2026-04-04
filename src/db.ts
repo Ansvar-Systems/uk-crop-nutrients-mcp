@@ -106,17 +106,113 @@ function initSchema(db: BetterSqlite3.Database): void {
   `);
 }
 
+const FTS_COLUMNS = ['title', 'body', 'crop_group', 'jurisdiction'];
+
 export function ftsSearch(
   db: Database,
   query: string,
   limit: number = 20
 ): { title: string; body: string; crop_group: string; jurisdiction: string; rank: number }[] {
-  return db.all(
-    `SELECT title, body, crop_group, jurisdiction, rank
-     FROM search_index
-     WHERE search_index MATCH ?
-     ORDER BY rank
-     LIMIT ?`,
-    [query, limit]
+  const { results } = tieredFtsSearch(db, 'search_index', FTS_COLUMNS, query, limit);
+  return results as { title: string; body: string; crop_group: string; jurisdiction: string; rank: number }[];
+}
+
+/**
+ * Tiered FTS5 search with automatic fallback.
+ * Tiers: exact phrase → AND → prefix → stemmed prefix → OR → LIKE
+ */
+export function tieredFtsSearch(
+  db: Database,
+  table: string,
+  columns: string[],
+  query: string,
+  limit: number = 20
+): { tier: string; results: Record<string, unknown>[] } {
+  const sanitized = sanitizeFtsInput(query);
+  if (!sanitized.trim()) return { tier: 'empty', results: [] };
+
+  const columnList = columns.join(', ');
+  const select = `SELECT ${columnList}, rank FROM ${table}`;
+  const order = `ORDER BY rank LIMIT ?`;
+
+  // Tier 1: Exact phrase
+  const phrase = `"${sanitized}"`;
+  let results = tryFts(db, select, table, order, phrase, limit);
+  if (results.length > 0) return { tier: 'phrase', results };
+
+  // Tier 2: AND
+  const words = sanitized.split(/\s+/).filter(w => w.length > 1);
+  if (words.length > 1) {
+    const andQuery = words.join(' AND ');
+    results = tryFts(db, select, table, order, andQuery, limit);
+    if (results.length > 0) return { tier: 'and', results };
+  }
+
+  // Tier 3: Prefix
+  const prefixQuery = words.map(w => `${w}*`).join(' AND ');
+  results = tryFts(db, select, table, order, prefixQuery, limit);
+  if (results.length > 0) return { tier: 'prefix', results };
+
+  // Tier 4: Stemmed prefix
+  const stemmed = words.map(w => stemWord(w) + '*');
+  const stemmedQuery = stemmed.join(' AND ');
+  if (stemmedQuery !== prefixQuery) {
+    results = tryFts(db, select, table, order, stemmedQuery, limit);
+    if (results.length > 0) return { tier: 'stemmed', results };
+  }
+
+  // Tier 5: OR
+  if (words.length > 1) {
+    const orQuery = words.join(' OR ');
+    results = tryFts(db, select, table, order, orQuery, limit);
+    if (results.length > 0) return { tier: 'or', results };
+  }
+
+  // Tier 6: LIKE fallback — bypasses FTS, searches base table with real column names
+  const baseCols = ['name', 'crop_group'];
+  const likeConditions = words.map(() =>
+    `(${baseCols.map(c => `${c} LIKE ?`).join(' OR ')})`
+  ).join(' AND ');
+  const likeParams = words.flatMap(w =>
+    baseCols.map(() => `%${w}%`)
   );
+  try {
+    const likeResults = db.all<Record<string, unknown>>(
+      `SELECT name as title, COALESCE(growth_stages, '') as body, crop_group, jurisdiction FROM crops WHERE ${likeConditions} LIMIT ?`,
+      [...likeParams, limit]
+    );
+    if (likeResults.length > 0) return { tier: 'like', results: likeResults };
+  } catch {
+    // LIKE fallback failed
+  }
+
+  return { tier: 'none', results: [] };
+}
+
+function tryFts(
+  db: Database, select: string, table: string,
+  order: string, matchExpr: string, limit: number
+): Record<string, unknown>[] {
+  try {
+    return db.all(
+      `${select} WHERE ${table} MATCH ? ${order}`,
+      [matchExpr, limit]
+    );
+  } catch {
+    return [];
+  }
+}
+
+function sanitizeFtsInput(query: string): string {
+  return query
+    .replace(/["""''„‚«»]/g, '"')
+    .replace(/[^a-zA-Z0-9\s*"_-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function stemWord(word: string): string {
+  return word
+    .replace(/(ies)$/i, 'y')
+    .replace(/(ying|tion|ment|ness|able|ible|ous|ive|ing|ers|ed|es|er|ly|s)$/i, '');
 }
