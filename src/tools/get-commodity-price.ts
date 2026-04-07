@@ -1,4 +1,5 @@
 import { buildMeta, buildStalenessWarning } from '../metadata.js';
+import { buildCitation } from '../citation.js';
 import { validateJurisdiction } from '../jurisdiction.js';
 import type { Database } from '../db.js';
 
@@ -55,6 +56,13 @@ export function handleGetCommodityPrice(db: Database, args: PriceArgs) {
     jurisdiction: jv.jurisdiction,
     ...(stalenessWarning ? { staleness_warning: stalenessWarning } : {}),
     _meta: buildMeta({
+    _citation: buildCitation(
+      `UK Price: ${price.crop_name} (${price.market})`,
+      `${price.crop_name} price on ${price.market} as of ${price.published_date} (${jv.jurisdiction})`,
+      'get_commodity_price',
+      { crop: args.crop, ...(args.market ? { market: args.market } : {}) },
+      'https://ahdb.org.uk/cereals-oilseeds/cereal-and-oilseed-markets',
+    ),
       data_age: price.published_date ?? 'unknown',
       source_url: 'https://ahdb.org.uk/cereals-oilseeds/cereal-and-oilseed-markets',
     }),

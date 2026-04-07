@@ -1,4 +1,5 @@
 import { buildMeta } from '../metadata.js';
+import { buildCitation } from '../citation.js';
 import { validateJurisdiction } from '../jurisdiction.js';
 import type { Database } from '../db.js';
 
@@ -92,5 +93,12 @@ export function handleGetNutrientPlan(db: Database, args: NutrientPlanArgs) {
     rb209_section: rec.rb209_section,
     notes: rec.notes,
     _meta: buildMeta({ source_url: 'https://ahdb.org.uk/nutrient-management-guide' }),
+    _citation: buildCitation(
+      `RB209: ${crop.name} on soil group ${soil.soil_group}`,
+      `Nutrient recommendation for ${crop.name} (${jv.jurisdiction})`,
+      'get_nutrient_plan',
+      { crop: args.crop, soil_type: args.soil_type },
+      'https://ahdb.org.uk/nutrient-management-guide',
+    ),
   };
 }

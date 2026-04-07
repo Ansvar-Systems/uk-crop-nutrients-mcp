@@ -1,4 +1,5 @@
 import { buildMeta } from '../metadata.js';
+import { buildCitation } from '../citation.js';
 import { validateJurisdiction } from '../jurisdiction.js';
 import type { Database } from '../db.js';
 
@@ -52,5 +53,11 @@ export function handleCalculateMargin(db: Database, args: MarginArgs) {
     gross_margin_per_ha: Math.round(grossMargin * 100) / 100,
     jurisdiction: jv.jurisdiction,
     _meta: buildMeta(),
+    _citation: buildCitation(
+      `UK Crop Margin: ${args.crop}`,
+      `Gross margin calculation for ${args.crop} (${jv.jurisdiction})`,
+      'calculate_margin',
+      { crop: args.crop, yield_t_ha: String(args.yield_t_ha) },
+    ),
   };
 }
