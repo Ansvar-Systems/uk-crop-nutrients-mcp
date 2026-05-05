@@ -56,6 +56,9 @@ export function handleGetCommodityPrice(db: Database, args: PriceArgs) {
     jurisdiction: jv.jurisdiction,
     ...(stalenessWarning ? { staleness_warning: stalenessWarning } : {}),
     _meta: buildMeta({
+      data_age: price.published_date ?? 'unknown',
+      source_url: 'https://ahdb.org.uk/cereals-oilseeds/cereal-and-oilseed-markets',
+    }),
     _citation: buildCitation(
       `UK Price: ${price.crop_name} (${price.market})`,
       `${price.crop_name} price on ${price.market} as of ${price.published_date} (${jv.jurisdiction})`,
@@ -63,8 +66,5 @@ export function handleGetCommodityPrice(db: Database, args: PriceArgs) {
       { crop: args.crop, ...(args.market ? { market: args.market } : {}) },
       'https://ahdb.org.uk/cereals-oilseeds/cereal-and-oilseed-markets',
     ),
-      data_age: price.published_date ?? 'unknown',
-      source_url: 'https://ahdb.org.uk/cereals-oilseeds/cereal-and-oilseed-markets',
-    }),
   };
 }
